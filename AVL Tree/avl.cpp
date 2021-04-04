@@ -3,50 +3,55 @@
 
 using namespace std;
 
-class tree
+namespace secret
 {
-public:
-    tree *left, *right;
-    int data, height;
+    class tree
+    {
+    public:
+        tree *left, *right;
+        int data, Height;
 
-    tree()
-    {
-        this->left = this->right = nullptr;
-        this->height = 1;
-    }
-    tree(int val)
-    {
-        this->left = this->right = nullptr;
-        this->data = val;
-        this->height = 1;
-    }
-    ~tree()
-    {
-        delete this->left;
-        delete this->right;
-    }
-};
+        tree()
+        {
+            this->left = this->right = nullptr;
+            this->Height = 1;
+        }
+        tree(int val)
+        {
+            this->left = this->right = nullptr;
+            this->data = val;
+            this->Height = 1;
+        }
+        ~tree()
+        {
+            delete this->left;
+            delete this->right;
+        }
+    };
+}
 
 class Set
 {
-    tree *root;
+    int _size;
+    secret::tree *root;
+    bool reallyDeleted;
 
-    int getHeight(tree *node)
+    int getHeight(secret::tree *node)
     {
         if (!node)
             return 0;
-        return node->height;
+        return node->Height;
     }
 
-    int balance_factor(tree *node)
+    int balance_factor(secret::tree *node)
     {
         return getHeight(node->left) - getHeight(node->right);
     }
 
-    tree *rightRotation(tree *node)
+    secret::tree *rightRotation(secret::tree *node)
     {
-        tree *LeftTree = node->left;
-        tree *LeftRightTree = LeftTree->right;
+        secret::tree *LeftTree = node->left;
+        secret::tree *LeftRightTree = LeftTree->right;
 
         LeftTree->right = node;
         node->left = LeftRightTree;
@@ -55,34 +60,36 @@ class Set
         // only 2 nodes may have changed their heights
         // as we changed only 2 pointers
 
-        node->height = max(getHeight(node->left), getHeight(node->right)) + 1;
+        node->Height = max(getHeight(node->left), getHeight(node->right)) + 1;
 
-        LeftTree->height = max(getHeight(LeftTree->left), getHeight(LeftTree->right)) + 1;
+        LeftTree->Height = max(getHeight(LeftTree->left), getHeight(LeftTree->right)) + 1;
 
         // LeftTree is the new root now
         return LeftTree;
     }
 
-    tree *leftRotation(tree *node)
+    secret::tree *leftRotation(secret::tree *node)
     {
-        tree *RightTree = node->right;
-        tree *RightLeftTree = RightTree->left;
+        secret::tree *RightTree = node->right;
+        secret::tree *RightLeftTree = RightTree->left;
 
         RightTree->left = node;
         node->right = RightLeftTree;
 
-        node->height = max(getHeight(node->left), getHeight(node->right)) + 1;
+        node->Height = max(getHeight(node->left), getHeight(node->right)) + 1;
 
-        RightTree->height = max(getHeight(RightTree->left), getHeight(RightTree->right)) + 1;
+        RightTree->Height = max(getHeight(RightTree->left), getHeight(RightTree->right)) + 1;
 
         return RightTree;
     }
 
-    tree *insert(tree *node, int key)
+    secret::tree *insert(secret::tree *node, int key)
     {
         if (node == nullptr)
-            return (new tree(key));
-
+        {
+            ++_size;
+            return (new secret::tree(key));
+        }
         if (key < node->data)
             node->left = insert(node->left, key);
         else if (key > node->data)
@@ -93,7 +100,7 @@ class Set
         // Coming back from recursion
 
         // Firstly update height of current ansestor
-        node->height = max(getHeight(node->left), getHeight(node->right)) + 1;
+        node->Height = max(getHeight(node->left), getHeight(node->right)) + 1;
 
         // After height updation get the balance factor
         int factor = balance_factor(node);
@@ -129,36 +136,137 @@ class Set
         return node;
     }
 
+    secret::tree *minVal(secret::tree *node)
+    {
+        while (node->left)
+            node = node->left;
+
+        return node;
+    }
+
+    secret::tree *remove(secret::tree *node, int key)
+    {
+        if (!node)
+            return root;
+
+        if (key < node->data)
+            node->left = remove(node->left, key);
+
+        else if (key > node->data)
+            node->right = remove(node->right, key);
+
+        else
+        {
+            if (node->left == nullptr or node->right == nullptr)
+            {
+                secret::tree *temp = nullptr;
+
+                if (node->left)
+                    temp = node->left;
+
+                if (node->right)
+                    temp = node->right;
+
+                if (temp == nullptr)
+                {
+                    temp = node;
+                    node = nullptr;
+                }
+                else
+                    *node = *temp;
+
+                temp->left = temp->right = nullptr;
+                
+                delete temp;
+            }
+            else
+            {
+                secret::tree *temp = minVal(node->right);
+
+                node->data = temp->data;
+
+                node->right = remove(node->right, temp->data);
+            }
+            reallyDeleted = true;
+        }
+
+        // Check for imbalance
+        if (!node)
+            return node;
+
+        node->Height = 1 + max(getHeight(node->left), getHeight(node->right));
+
+        int factor = balance_factor(node);
+
+        // Left left case
+        if (factor > 1 and balance_factor(node->left) >= 0)
+            return rightRotation(node);
+
+        // Right right case
+        if (factor < -1 and balance_factor(node->right) <= 0)
+            return leftRotation(node);
+
+        // Left right case
+        if (factor > 1 and balance_factor(node->left) < 0)
+        {
+            node->left = leftRotation(node->left);
+            return rightRotation(node);
+        }
+
+        // Right left case
+        if (factor < -1 and balance_factor(node->right) > 0)
+        {
+            node->right = rightRotation(node->right);
+            return leftRotation(node);
+        }
+
+        return node;
+    }
+
 public:
-    Set() { root = nullptr; }
+    Set()
+    {
+        _size = 0;
+        root = nullptr;
+    }
     ~Set() { delete root; }
 
     void insert(int key)
     {
         this->root = insert(this->root, key);
     }
+    void remove(int key)
+    {
+        this->root = remove(this->root, key);
 
-    int Height()
+        if (reallyDeleted)
+        {
+            --_size;
+            reallyDeleted = false;
+        }
+    }
+
+    int height()
     {
         return getHeight(root);
     }
-
-    // remove
-    // size
+    int size()
+    {
+        return _size;
+    }
     // lower_bound
     // upper_bound
 
-/*
     void print()
     {
-        queue<tree *> Q;
+        queue<secret::tree *> Q;
 
         Q.push(root);
         Q.push(nullptr);
 
         while (Q.size() != 1)
         {
-            tree *temp = Q.front();
+            secret::tree *temp = Q.front();
             Q.pop();
 
             if (temp == nullptr)
@@ -182,15 +290,14 @@ public:
         }
 
         cout << "\n\n\n\n\n";
-    }*/
+    }
 };
 
 int main()
 {
     Set s;
-    for (int i = 1; i <= 3000; ++i)
+    for (int i = 1; i <= 15; ++i)
     {
         s.insert(i);
-        cout << s.Height() << " ";
     }
 }
