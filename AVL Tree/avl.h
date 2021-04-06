@@ -1,7 +1,4 @@
 #include <iostream>
-#include <queue>
-
-using namespace std;
 
 namespace secret
 {
@@ -32,9 +29,17 @@ namespace secret
 
 class Set
 {
+    // saves the size of the set
     int _size;
+
+    // root of the tree
     secret::tree *root;
+
+    // variable to tell if a key was deleted (used to update size)
     bool reallyDeleted;
+
+    // utility pointers for upper bound, lower bound and find function
+    const int *lowerPointer, *upperPointer, *findPointer;
 
     int getHeight(secret::tree *node)
     {
@@ -60,9 +65,9 @@ class Set
         // only 2 nodes may have changed their heights
         // as we changed only 2 pointers
 
-        node->Height = max(getHeight(node->left), getHeight(node->right)) + 1;
+        node->Height = std::max(getHeight(node->left), getHeight(node->right)) + 1;
 
-        LeftTree->Height = max(getHeight(LeftTree->left), getHeight(LeftTree->right)) + 1;
+        LeftTree->Height = std::max(getHeight(LeftTree->left), getHeight(LeftTree->right)) + 1;
 
         // LeftTree is the new root now
         return LeftTree;
@@ -76,13 +81,14 @@ class Set
         RightTree->left = node;
         node->right = RightLeftTree;
 
-        node->Height = max(getHeight(node->left), getHeight(node->right)) + 1;
+        node->Height = std::max(getHeight(node->left), getHeight(node->right)) + 1;
 
-        RightTree->Height = max(getHeight(RightTree->left), getHeight(RightTree->right)) + 1;
+        RightTree->Height = std::max(getHeight(RightTree->left), getHeight(RightTree->right)) + 1;
 
         return RightTree;
     }
 
+    // Private insertion function
     secret::tree *insert(secret::tree *node, int key)
     {
         if (node == nullptr)
@@ -100,7 +106,7 @@ class Set
         // Coming back from recursion
 
         // Firstly update height of current ansestor
-        node->Height = max(getHeight(node->left), getHeight(node->right)) + 1;
+        node->Height = std::max(getHeight(node->left), getHeight(node->right)) + 1;
 
         // After height updation get the balance factor
         int factor = balance_factor(node);
@@ -136,6 +142,7 @@ class Set
         return node;
     }
 
+    // Private utility function to get the mininum value
     secret::tree *minVal(secret::tree *node)
     {
         while (node->left)
@@ -144,10 +151,12 @@ class Set
         return node;
     }
 
+    // Private function to remove the key
     secret::tree *remove(secret::tree *node, int key)
     {
+
         if (!node)
-            return root;
+            return node;
 
         if (key < node->data)
             node->left = remove(node->left, key);
@@ -159,13 +168,7 @@ class Set
         {
             if (node->left == nullptr or node->right == nullptr)
             {
-                secret::tree *temp = nullptr;
-
-                if (node->left)
-                    temp = node->left;
-
-                if (node->right)
-                    temp = node->right;
+                secret::tree *temp = node->left ? node->left : node->right;
 
                 if (temp == nullptr)
                 {
@@ -176,7 +179,6 @@ class Set
                     *node = *temp;
 
                 temp->left = temp->right = nullptr;
-                
                 delete temp;
             }
             else
@@ -194,7 +196,7 @@ class Set
         if (!node)
             return node;
 
-        node->Height = 1 + max(getHeight(node->left), getHeight(node->right));
+        node->Height = 1 + std::max(getHeight(node->left), getHeight(node->right));
 
         int factor = balance_factor(node);
 
@@ -202,16 +204,16 @@ class Set
         if (factor > 1 and balance_factor(node->left) >= 0)
             return rightRotation(node);
 
-        // Right right case
-        if (factor < -1 and balance_factor(node->right) <= 0)
-            return leftRotation(node);
-
         // Left right case
         if (factor > 1 and balance_factor(node->left) < 0)
         {
             node->left = leftRotation(node->left);
             return rightRotation(node);
         }
+
+        // Right right case
+        if (factor < -1 and balance_factor(node->right) <= 0)
+            return leftRotation(node);
 
         // Right left case
         if (factor < -1 and balance_factor(node->right) > 0)
@@ -223,18 +225,78 @@ class Set
         return node;
     }
 
+    // Private function to find the lowerbound
+    void lowerBound(secret::tree *node, int key)
+    {
+        if (!node)
+            return;
+
+        if (node->data >= key)
+        {
+            lowerPointer = &node->data;
+            lowerBound(node->left, key);
+        }
+        else
+        {
+            lowerBound(node->right, key);
+        }
+    }
+
+    // Private function to find the upperbound
+    void upperBound(secret::tree *node, int key)
+    {
+        if (!node)
+            return;
+
+        if (node->data > key)
+        {
+            upperPointer = &node->data;
+            upperBound(node->left, key);
+        }
+        else
+        {
+            upperBound(node->right, key);
+        }
+    }
+
+    // Private function to find the key
+    void find(secret::tree *node, int key)
+    {
+        while (node)
+        {
+            if (node->data == key)
+            {
+                findPointer = &node->data;
+                return;
+            }
+            else if (node->data < key)
+                node = node->right;
+            else
+                node = node->left;
+        }
+    }
+
 public:
+
     Set()
     {
         _size = 0;
         root = nullptr;
+        lowerPointer = upperPointer = findPointer = nullptr;
     }
-    ~Set() { delete root; }
 
+    ~Set() 
+    { 
+        delete this; 
+    }
+
+    // Insert a key into the set
     void insert(int key)
     {
         this->root = insert(this->root, key);
     }
+
+    // Removes the given key from set if present
     void remove(int key)
     {
         this->root = remove(this->root, key);
@@ -246,58 +308,45 @@ public:
         }
     }
 
-    int height()
+    int height(secret::tree *node)
     {
-        return getHeight(root);
+        return getHeight(node);
     }
     int size()
     {
         return _size;
     }
-    // lower_bound
-    // upper_bound
 
-    void print()
+    // Returns NULL pointer if no lower found, a const integer pointer to the lower bound otherwise
+    const int *lowerBound(int key)
     {
-        queue<secret::tree *> Q;
+        lowerBound(this->root, key);
 
-        Q.push(root);
-        Q.push(nullptr);
+        const int *temp = lowerPointer;
+        lowerPointer = nullptr;
 
-        while (Q.size() != 1)
-        {
-            secret::tree *temp = Q.front();
-            Q.pop();
+        return temp;
+    }
 
-            if (temp == nullptr)
-            {
-                Q.push(temp);
-                cout << "\n";
-                continue;
-            }
-            cout << temp->data << '\t';
-            if (temp->left)
-            {
-                cout << "L: " << temp->left->data << '\t';
-                Q.push(temp->left);
-            }
-            if (temp->right)
-            {
-                cout << "R: " << temp->right->data;
-                Q.push(temp->right);
-            }
-            cout << "\n";
-        }
+    // Returns NULL pointer if no upper found, a const integer pointer to the upper bound otherwise
+    const int *upperBound(int key)
+    {
+        upperBound(this->root, key);
 
-        cout << "\n\n\n\n\n";
+        const int *temp = upperPointer;
+        upperPointer = nullptr;
+
+        return temp;
+    }
+
+    // Returns NULL pointer if given key was not found, a const integer pointer to the key otherwise
+    const int *find(int key)
+    {
+        find(this->root, key);
+
+        const int *temp = findPointer;
+        findPointer = nullptr;
+
+        return temp;
     }
 };
-
-int main()
-{
-    Set s;
-    for (int i = 1; i <= 15; ++i)
-    {
-        s.insert(i);
-    }
-}
