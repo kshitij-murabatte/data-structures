@@ -7,32 +7,31 @@
 #include <iostream>
 
 // a namespace to keep internal structure hidden
+
 namespace secret
 {
     // class that stores queue elements in a segmented form
     // to provide similar performance with better space efficency
+    template <typename T>
     class Box
     {
         /*
         * front -> index of front of the current queue
         * back -> index of back of queue
         * _size -> fixed size of individual queue
-        * filled -> number of filled elements
         * *arr -> the queue
         */
 
     public:
         int front, back;
-        int const _size = 16;
-        int filled;
-        int *arr;
+        int const _size = 64;
+        T *arr;
 
         // constructor allocates memory to queue
         Box()
         {
-            arr = new int[_size];
+            arr = new T[_size];
             front = back = 0;
-            filled = 0;
         }
         // deleting dynamically allocated queue
         ~Box()
@@ -41,45 +40,40 @@ namespace secret
         }
 
         // returning front element of queue
-        int Front()
+        T Front()
         {
             return arr[front];
         }
 
         // pushing element at back of queue and increasing number of filled
-        void Push(int a)
+        void Push(const T &a)
         {
-            ++filled;
-            arr[back++];
+            arr[back++] = a;
         }
 
         // popping from front of queue and reducing number of filled
         void Pop()
         {
-            --filled;
             ++front;
         }
 
         // function to return current size of queue
-        int Size()
-        {
-            return filled;
-        }
     };
 
     /*
     * Blueprint of a linked list node
     * Refer the architecture for better understanding
     */
+    template <typename T>
     class List
     {
     public:
-        Box *_queue;
-        List *left, *right;
+        Box<T> *_queue;
+        List<T> *left, *right;
 
         List()
         {
-            _queue = new Box();
+            _queue = new Box<T>();
             left = right = nullptr;
         }
         ~List()
@@ -91,19 +85,20 @@ namespace secret
     };
 }
 
-// main class with which a programmer will intract
+// Standard FIFO data structure
+template <typename T>
 class Queue
 {
     // private variables to maintian the linked list
 private:
-    int size;
-    secret::List *head, *tail;
+    int _size;
+    secret::List<T> *head, *tail;
 
 public:
-    // when a object is created the is no memory allocated dynamically
+    // when a object is created there is no memory allocated dynamically
     Queue()
     {
-        size = 0;
+        _size = 0;
         head = tail = 0;
     }
     ~Queue()
@@ -111,29 +106,30 @@ public:
         delete head;
     }
 
-    // pusing into the queue
-    void push(int a)
+    // pushing into the queue
+    void push(const T a)
     {
         if (!head)
         {
-            // if the size of queue is 0 trying to make a new node
+            // if the size of queue is 0, trying to make a new node
             // otherwise informing the programmer of failed operation
             try
             {
-                head = tail = new secret::List();
+                head = tail = new secret::List<T>();
             }
             catch (const std::exception &e)
             {
                 std::cerr << e.what() << '\n';
+                std::exit(2);
             }
         }
 
         // increasing the size of queue
-        ++size;
+        ++_size;
 
         // inserting new element in current node only if it is not
         // completely filled
-        if (tail->_queue->filled < tail->_queue->_size)
+        if (tail->_queue->back != tail->_queue->_size)
         {
             tail->_queue->Push(a);
             return;
@@ -141,15 +137,16 @@ public:
 
         // if the tail node is filled
         // try to allocate memory for a new node
-        secret::List *temp;
+        secret::List<T> *temp;
 
         try
         {
-            temp = new secret::List();
+            temp = new secret::List<T>();
         }
         catch (const std::exception &e)
         {
             std::cerr << e.what() << '\n';
+            std::exit(2);
         }
 
         // setting the new node as tail
@@ -173,6 +170,7 @@ public:
         catch (const int error)
         {
             std::cerr << "\nQueue is empty!";
+            std::exit(2);
         }
 
         // if the current node is the only node in the list
@@ -180,28 +178,28 @@ public:
         {
             // if the node has only 1 remaining element
             // delete this node to free memory
-            if (head->_queue->filled == 1)
+            if (head->_queue->front == head->_queue->_size - 1)
             {
-                --size;
+                --_size;
                 delete head;
                 return;
             }
 
             // otherwise calling Box->Pop() method on current node queue
             head->_queue->Pop();
-            
+
             // reducing the size of queue
-            --size;
+            --_size;
 
             return;
         }
 
         // when list has more than 1 nodes
         // and current list only has 1 element left
-        if (head->_queue->filled == 1)
+        if (head->_queue->front == head->_queue->_size - 1)
         {
             // taking a temporary pointer
-            secret::List *temp = head->right;
+            secret::List<T> *temp = head->right;
 
             // detaching the head node (because recursive nature of destructor)
             head->right = nullptr;
@@ -212,17 +210,17 @@ public:
 
             // reducing size of queue
             head = temp;
-            --size;
+            --_size;
             return;
         }
 
-        // popping if none of above conditions satisfy
+        // popping if none of the above conditions satisfy
         head->_queue->Pop();
-        --size;
+        --_size;
     }
 
     // function to return front of queue
-    int front()
+    T front()
     {
         // exception when trying to get front from a empty queue
         try
@@ -233,7 +231,7 @@ public:
         catch (const int error)
         {
             std::cerr << "\nQueue is empty!";
-            return -1;
+            std::exit(2);
         }
 
         // returning from of queue
@@ -243,170 +241,11 @@ public:
     // tells whether queue is empty or not
     bool isEmpty()
     {
-        return size == 0;
+        return _size == 0;
+    }
+
+    int size()
+    {
+        return this->_size;
     }
 };
-
-
-/*
-#include <iostream>
-
-namespace secret
-{
-    class Box
-    {
-    public:
-        int front, back;
-        int const _size = 4;
-        int filled;
-        int *arr;
-
-        Box()
-        {
-            arr = new int[_size];
-            front = back = 0;
-            filled = 0;
-        }
-        ~Box()
-        {
-            delete[] arr;
-        }
-
-        int Front()
-        {
-            return arr[front];
-        }
-        void Push(int a)
-        {
-            ++filled;
-            arr[back++] = a;
-        }
-        void Pop()
-        {
-            --filled;
-            ++front;
-        }
-    };
-
-    class List
-    {
-    public:
-        Box *_queue;
-        List *left, *right;
-
-        List()
-        {
-            _queue = new Box();
-            left = right = nullptr;
-        }
-        ~List()
-        {
-            delete _queue;
-            delete right;
-        }
-    };
-}
-
-class Queue
-{
-private:
-    int size;
-    secret::List *head, *tail;
-
-public:
-    Queue()
-    {
-        size = 0;
-        head = tail = 0;
-    }
-    ~Queue()
-    {
-        delete head;
-    }
-    void push(int a)
-    {
-        if (!head)
-        {
-            head = tail = new secret::List();
-        }
-
-        ++size;
-
-        if (tail->_queue->filled < tail->_queue->_size)
-        {
-            tail->_queue->Push(a);
-            return;
-        }
-
-        secret::List *temp;
-
-        try
-        {
-            temp = new secret::List();
-        }
-        catch (const std::exception &e)
-        {
-            std::cerr << e.what() << '\n';
-        }
-
-        tail->right = temp;
-        temp->left = tail;
-        tail = temp;
-
-        tail->_queue->Push(a);
-    }
-    void pop()
-    {
-        try
-        {
-            if (!head)
-                throw -1;
-        }
-        catch (const int error)
-        {
-            std::cerr << "\nQueue is empty!";
-        }
-
-        if (head->right == nullptr)
-        {
-            if (head->_queue->filled == 1)
-            {
-                --size;
-                delete head;
-                return;
-            }
-            head->_queue->Pop();
-            --size;
-            return;
-        }
-
-        if (head->_queue->filled == 1)
-        {
-            secret::List *temp = head->right;
-            head->right = nullptr;
-            delete head;
-
-            head = temp;
-            --size;
-            return;
-        }
-
-        head->_queue->Pop();
-        --size;
-    }
-    int front()
-    {
-        try
-        {
-            if (!head)
-                throw -1;
-        }
-        catch (const int error)
-        {
-            std::cerr << "\nQueue is empty!";
-            return -1;
-        }
-        return head->_queue->Front();
-    }
-};
-*/
