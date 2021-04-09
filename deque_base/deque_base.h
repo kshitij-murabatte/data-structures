@@ -30,15 +30,25 @@ namespace secret
         {
             arr = new T[container_size];
 
-            // type 1 to get a new container
-            // for pushing at back 
-            if (type)
-                front = back = -1;
-
-            // type 0 to get a new container
-            // for pushing in front
-            else
-                front = back = container_size;
+            switch (type)
+            {
+                // type 0 to get a new container
+                // for pushing in front
+                case 0:
+                    front = back = container_size;
+                    break;
+                
+                // type 1 to get a new container
+                // for pushing at back
+                case 1: 
+                    front = back = -1;
+                    break;
+                /*
+                // type 2 for standard queue container
+                case 2:
+                    front = back = 0;
+                    break;*/
+            }
         }
 
         // deleting dynamically allocated container
