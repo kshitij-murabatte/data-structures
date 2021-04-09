@@ -30,8 +30,13 @@ namespace secret
         {
             arr = new T[container_size];
 
+            // type 1 to get a new container
+            // for pushing at back 
             if (type)
                 front = back = -1;
+
+            // type 0 to get a new container
+            // for pushing in front
             else
                 front = back = container_size;
         }
@@ -42,11 +47,13 @@ namespace secret
             delete[] arr;
         }
 
-        // returning front element of container
+        // returning front element of the container
         T Front()
         {
             return arr[front];
         }
+
+        // returning back element of the container
         T Back()
         {
             return arr[back];
@@ -57,6 +64,8 @@ namespace secret
         {
             arr[++back] = a;
         }
+
+        // pushing element in front of the conatiner
         void PushFront(const T &a)
         {
             arr[--front] = a;
@@ -67,6 +76,8 @@ namespace secret
         {
             ++front;
         }
+
+        // popping from back of the container
         void PopBack()
         {
             --back;
@@ -81,6 +92,11 @@ namespace secret
     class List
     {
     public:
+        // stores a pointer to box
+        // it is like small arrays in
+        // a linked list node
+        // this reduces frequent memory
+        // allocations and deallocations 
         Box<T> *container;
         List<T> *next, *prev;
 
