@@ -6,7 +6,7 @@
 
 using namespace std;
 
-int const times = 1e6;
+int const times = 1e7;
 
 class node
 {
@@ -109,10 +109,9 @@ int main()
     double STDmax = 0.0, MINEmin = 100.0, STDmin = 100.0, MINEmax = 0.0;
     double MINEavg = 0.0, STDavg = 0.0;
 
-    while (x < 100)
+    while (x < 10)
     {
-        if (x % 10 == 0)
-            cout << (x / 1000.0) * 100 << '\n';
+        cout << (x / 1000.0) * 100 << '\n';
 
         Deque<int> D;
         deque<int> d;
@@ -133,8 +132,8 @@ int main()
 
         for (int i = 0; i < times; ++i)
         {
-            int a = arr[times] % 4;
-            int p = arr[times];
+            int a = arr[i] % 4;
+            int p = arr[i];
 
             switch (a)
             {
@@ -174,8 +173,8 @@ int main()
 
         for (int i = 0; i < times; ++i)
         {
-            int a = arr[times] % 4;
-            int p = arr[times];
+            int a = arr[i] % 4;
+            int p = arr[i];
             switch (a)
             {
             case 0:
